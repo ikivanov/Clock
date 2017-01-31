@@ -1,0 +1,17 @@
+<html>
+    <body>
+        <canvas id="theClock" width="300" height="500"></canvas>
+    </body>
+    
+    <script type="text/javascript" src="pendulum.js"></script>
+    <script type="text/javascript" src="clock.js"></script>
+
+    <script type="text/javascript">
+        var canvas = document.getElementById("theClock"),
+            clock = new ClockNamespace.Clock({
+                canvas: canvas
+            });
+
+        clock.render();
+    </script>
+</html>
