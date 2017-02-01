@@ -24,7 +24,6 @@
             that.pendulum.render();
 
             setTimeout(function() {
-                console.log("updating...");
                 that.context.clearRect(0, 0, canvas.width, canvas.height);
                 
                 that.pendulum.update();
