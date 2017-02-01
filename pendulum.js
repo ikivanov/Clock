@@ -9,7 +9,7 @@
         that.centerY  = PENDULUM_CENTER_Y;
         that.x = that.centerX;
         that.y = that.centerY + PENDULUM_LENGTH;
-        that.angleSpeed = 6;
+        that.angleSpeed = 1;
     }
 
     Pendulum.prototype = {

@@ -2,10 +2,15 @@
     function Clock(config) {
         var that = this;
 
-        that.canvas = config.canvas;
-        that.context = that.canvas.getContext("2d");
+        that.primaryCanvas = config.canvas;
+        that.primaryContext = that.primaryCanvas.getContext("2d");
 
-        that.pendulum = new ClockNamespace.Pendulum({canvas: that.canvas});
+        that.secondaryCanvas = document.createElement("canvas");
+        that.secondaryCanvas.width = WIDTH;
+        that.secondaryCanvas.height = HEIGHT;
+        that.context = that.secondaryCanvas.getContext("2d");
+
+        that.pendulum = new ClockNamespace.Pendulum({ canvas: that.secondaryCanvas });
     }
 
     Clock.prototype = {
@@ -24,10 +29,13 @@
             that.pendulum.render();
 
             setTimeout(function() {
-                that.context.clearRect(0, 0, canvas.width, canvas.height);
+                that.context.clearRect(0, 0, that.secondaryCanvas.width, that.secondaryCanvas.height);
                 
                 that.pendulum.update();
                 that._render();
+
+                that.primaryContext.clearRect(0, 0, WIDTH, HEIGHT);
+                that.primaryContext.drawImage(that.secondaryCanvas, 0, 0);
             }, UPDATE_TIMEOUT);
         },
 
@@ -37,7 +45,7 @@
             ctx.beginPath();
             ctx.lineWidth = 1;
             ctx.strokeStyle = BLACK;
-            ctx.rect(0, 0, 300, 300);
+            ctx.rect(0, 0, WIDTH, WIDTH);
             ctx.fillStyle = DIAL_FILL_COLOR;
             ctx.fill();
             ctx.stroke();
@@ -230,9 +238,10 @@
         TIMEZONE1_HOURS_OFFSET = -3,
         TIMEZONE2_HOURS_OFFSET = 2,
         TIMEZONE_HOUR_ARROW_RADIUS = TIMEZONE_RADIUS - 10,
-        UPDATE_TIMEOUT = 1000 / 30,
+        FPS = 60,
+        UPDATE_TIMEOUT = 1000 / FPS,
         WIDTH = 300,
-        HEIGHT = 400,
+        HEIGHT = 500,
         PENDULUM_CENTER_X = WIDTH / 2,
         PENDULUM_CENTER_Y = HEIGHT - 100,
         PENDULUM_LENGTH = 75,
