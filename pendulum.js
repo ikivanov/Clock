@@ -1,56 +1,56 @@
 (function() {
-    function Pendulum(config) {
-        var that = this;
+	class Pendulum {
+		constructor(config) {
+			let that = this;
 
-        that.canvas = config.canvas;
-        that.context = that.canvas.getContext("2d");
-        that.angle = 90;
-        that.centerX = PENDULUM_CENTER_X;
-        that.centerY  = PENDULUM_CENTER_Y;
-        that.x = that.centerX;
-        that.y = that.centerY + PENDULUM_LENGTH;
-        that.angleSpeed = 1;
-    }
+			that.canvas = config.canvas;
+			that.context = that.canvas.getContext("2d");
+			that.angle = 90;
+			that.centerX = PENDULUM_CENTER_X;
+			that.centerY  = PENDULUM_CENTER_Y;
+			that.x = that.centerX;
+			that.y = that.centerY + PENDULUM_LENGTH;
+			that.angleSpeed = 1;
+		}
 
-    Pendulum.prototype = {
-        update: function() {
-            var that = this;
+		update() {
+			let that = this;
 
-            if ((that.angleSpeed > 0 && that.angle >= PENDULUM_MAX_ANGLE) || 
-                    (that.angleSpeed < 0 && that.angle <= PENDULUM_MIN_ANGLE)) {
-                that.angleSpeed *= -1;
-            }
+			if ((that.angleSpeed > 0 && that.angle >= PENDULUM_MAX_ANGLE) ||
+					(that.angleSpeed < 0 && that.angle <= PENDULUM_MIN_ANGLE)) {
+				that.angleSpeed *= -1;
+			}
 
-            that.angle += that.angleSpeed;
+			that.angle += that.angleSpeed;
 
-            that.x = PENDULUM_CENTER_X + (PENDULUM_LENGTH * Math.cos(this._toRadians(that.angle)));
-            that.y = PENDULUM_CENTER_Y + (PENDULUM_LENGTH * Math.sin(this._toRadians(that.angle)));
-        },
+			that.x = PENDULUM_CENTER_X + (PENDULUM_LENGTH * Math.cos(this._toRadians(that.angle)));
+			that.y = PENDULUM_CENTER_Y + (PENDULUM_LENGTH * Math.sin(this._toRadians(that.angle)));
+		}
 
-        render: function() {
-            var that = this,
-                ctx = that.context;
-            
-            ctx.beginPath();
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = BLACK;
-            ctx.moveTo(PENDULUM_CENTER_X, PENDULUM_CENTER_Y);
-            ctx.lineTo(that.x, that.y);
-            ctx.stroke();
+		render() {
+			let that = this,
+				ctx = that.context;
 
-            ctx.beginPath();
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = BLACK;
-            ctx.arc(that.x, that.y, PENDULUM_RADIUS, 0, 2 * Math.PI);
-            ctx.fillStyle = BLACK;
-            ctx.fill();
-            ctx.stroke();
-        },
+			ctx.beginPath();
+			ctx.lineWidth = 4;
+			ctx.strokeStyle = BLACK;
+			ctx.moveTo(PENDULUM_CENTER_X, PENDULUM_CENTER_Y);
+			ctx.lineTo(that.x, that.y);
+			ctx.stroke();
 
-        _toRadians: function(degrees) {
-            return degrees * Math.PI / ANGLES_180;
-        }
-    };
+			ctx.beginPath();
+			ctx.lineWidth = 4;
+			ctx.strokeStyle = BLACK;
+			ctx.arc(that.x, that.y, PENDULUM_RADIUS, 0, 2 * Math.PI);
+			ctx.fillStyle = BLACK;
+			ctx.fill();
+			ctx.stroke();
+		}
+
+		_toRadians(degrees) {
+			return degrees * Math.PI / ANGLES_180;
+		}
+	}
 
     window.ClockNamespace = window.ClockNamespace || {};
     window.ClockNamespace.Pendulum = Pendulum;

@@ -1,203 +1,199 @@
 (function() {
-    function Clock(config) {
-        var that = this;
+	class Clock {
+		constructor(config) {
+			this.primaryCanvas = config.canvas;
+			this.primaryContext = this.primaryCanvas.getContext("2d");
 
-        that.primaryCanvas = config.canvas;
-        that.primaryContext = that.primaryCanvas.getContext("2d");
+			this.secondaryCanvas = document.createElement("canvas");
+			this.secondaryCanvas.width = WIDTH;
+			this.secondaryCanvas.height = HEIGHT;
+			this.context = this.secondaryCanvas.getContext("2d");
 
-        that.secondaryCanvas = document.createElement("canvas");
-        that.secondaryCanvas.width = WIDTH;
-        that.secondaryCanvas.height = HEIGHT;
-        that.context = that.secondaryCanvas.getContext("2d");
+			this.pendulum = new ClockNamespace.Pendulum({ canvas: this.secondaryCanvas });
+		}
 
-        that.pendulum = new ClockNamespace.Pendulum({ canvas: that.secondaryCanvas });
-    }
+		render() {
+			this._render();
+		}
 
-    Clock.prototype = {
-        render: function() {
-            this._render();
-        },
+		_render() {
+			this._renderCase();
+			this._renderDial();
+			this._renderHourArrow();
+			this._renderMinutesArrow();
+			this._renderSecondsArrow();
+			this.pendulum.render();
 
-        _render: function() {
-            var that = this;
+			setTimeout(_ => {
+				this.context.clearRect(0, 0, this.secondaryCanvas.width, this.secondaryCanvas.height);
 
-            that._renderCase();
-            that._renderDial();
-            that._renderHourArrow();
-            that._renderMinutesArrow();
-            that._renderSecondsArrow();
-            that.pendulum.render();
+				this.pendulum.update();
+				this._render();
 
-            setTimeout(function() {
-                that.context.clearRect(0, 0, that.secondaryCanvas.width, that.secondaryCanvas.height);
-                
-                that.pendulum.update();
-                that._render();
+				this.primaryContext.clearRect(0, 0, WIDTH, HEIGHT);
+				this.primaryContext.drawImage(this.secondaryCanvas, 0, 0);
+			}, UPDATE_TIMEOUT);
+		}
 
-                that.primaryContext.clearRect(0, 0, WIDTH, HEIGHT);
-                that.primaryContext.drawImage(that.secondaryCanvas, 0, 0);
-            }, UPDATE_TIMEOUT);
-        },
+		_renderCase() {
+			let ctx = this.context;
 
-        _renderCase: function() {
-            var ctx = this.context;
-            
-            ctx.beginPath();
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = BLACK;
-            ctx.rect(0, 0, WIDTH, WIDTH);
-            ctx.fillStyle = DIAL_FILL_COLOR;
-            ctx.fill();
-            ctx.stroke();
-        },
+			ctx.beginPath();
+			ctx.lineWidth = 1;
+			ctx.strokeStyle = BLACK;
+			ctx.rect(0, 0, WIDTH, WIDTH);
+			ctx.fillStyle = DIAL_FILL_COLOR;
+			ctx.fill();
+			ctx.stroke();
+		}
 
-        _renderDial: function() {
-            var ctx = this.context;
-            
-            ctx.beginPath();
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = DIAL_OUTLINE_COLOR;
-            ctx.arc(CENTER_X, CENTER_Y, RADIUS, 0, 2 * Math.PI);
-            ctx.fillStyle = DIAL_FILL_COLOR;
-            ctx.fill();
-            ctx.stroke();
+		_renderDial() {
+			let ctx = this.context;
 
-            for (var angle = 0; angle < ANGLES_360; angle += MINUTES_STEP_ANGLE) {
-                 var x = CENTER_X + ((RADIUS - RADIUS_OFFSET) * Math.cos(this._toRadians(angle)));
-                 var y = CENTER_Y + ((RADIUS - RADIUS_OFFSET) * Math.sin(this._toRadians(angle)));
+			ctx.beginPath();
+			ctx.lineWidth = 1;
+			ctx.strokeStyle = DIAL_OUTLINE_COLOR;
+			ctx.arc(CENTER_X, CENTER_Y, RADIUS, 0, 2 * Math.PI);
+			ctx.fillStyle = DIAL_FILL_COLOR;
+			ctx.fill();
+			ctx.stroke();
 
-                var radius = angle % HOURS_STEP_ANGLE === 0 ? HOUR_RADIUS : MINUTE_RADIUS;
-    
-                ctx.beginPath();
-                ctx.arc(x, y, radius, 0, 2 * Math.PI);
-                ctx.fillStyle = BLACK;
-                ctx.fill();
-                ctx.stroke();
-            }
+			for (let angle = 0; angle < 360; angle += MINUTES_STEP_ANGLE) {
+					let x = CENTER_X + ((RADIUS - RADIUS_OFFSET) * Math.cos(this._toRadians(angle)));
+					let y = CENTER_Y + ((RADIUS - RADIUS_OFFSET) * Math.sin(this._toRadians(angle)));
 
-            this._renderHours();
-            this._renderMake();
-        },
+				let radius = angle % HOURS_STEP_ANGLE === 0 ? HOUR_RADIUS : MINUTE_RADIUS;
 
-        _renderHours: function() {
-            var ctx = this.context,
-                hour = 1;
+				ctx.beginPath();
+				ctx.arc(x, y, radius, 0, 2 * Math.PI);
+				ctx.fillStyle = BLACK;
+				ctx.fill();
+				ctx.stroke();
+			}
 
-            for (var angle = -ANGLES_60; angle <= ANGLES_270; angle += HOURS_STEP_ANGLE, hour++) {
-                 var x = CENTER_X + (HOUR_DIGITS_RADIOUS * Math.cos(this._toRadians(angle)));
-                 var y = CENTER_Y + (HOUR_DIGITS_RADIOUS * Math.sin(this._toRadians(angle)));
+			this._renderHours();
+			this._renderMake();
+		}
 
-                ctx.font = HOURS_FONT_SIZE + "px Arial";
-                
-                var textSize = ctx.measureText(hour);
-                var textOffset = HOURS_FONT_SIZE / 2;
+		_renderHours() {
+			let ctx = this.context,
+				hour = 1;
 
-                y = y > 0 ? y + textOffset : y - textOffset;
+			for (let angle = -ANGLES_60; angle <= ANGLES_270; angle += HOURS_STEP_ANGLE, hour++) {
+					let x = CENTER_X + (HOUR_DIGITS_RADIOUS * Math.cos(this._toRadians(angle)));
+					let y = CENTER_Y + (HOUR_DIGITS_RADIOUS * Math.sin(this._toRadians(angle)));
 
-                ctx.fillText(hour, x - textSize.width / 2, y);
-            }
-        },
+				ctx.font = HOURS_FONT_SIZE + "px Arial";
 
-        _renderHourArrow: function() {
-            var ctx = this.context,
-                angle = this._getHoursAngle(new Date().getHours()),
-                x = CENTER_X + ((RADIUS - HOUR_ARROW_LENGTH) * Math.cos(this._toRadians(angle))),
-                y = CENTER_Y + ((RADIUS - HOUR_ARROW_LENGTH) * Math.sin(this._toRadians(angle)));
+				let textSize = ctx.measureText(hour);
+				let textOffset = HOURS_FONT_SIZE / 2;
 
-            ctx.beginPath();
-            ctx.lineWidth = 4;
-            ctx.moveTo(CENTER_X, CENTER_Y);
-            ctx.lineTo(x, y);
+				y = y > 0 ? y + textOffset : y - textOffset;
 
-            ctx.stroke();
-        },
+				ctx.fillText(hour, x - textSize.width / 2, y);
+			}
+		}
 
-        _renderMinutesArrow: function() {
-            var ctx = this.context,
-                angle = this._getMinutesAngle(),
-                x = CENTER_X + ((RADIUS - MINUTE_ARROW_LENGTH) * Math.cos(this._toRadians(angle))),
-                y = CENTER_Y + ((RADIUS - MINUTE_ARROW_LENGTH) * Math.sin(this._toRadians(angle)));
+		_renderHourArrow() {
+			let ctx = this.context,
+				angle = this._getHoursAngle(new Date().getHours()),
+				x = CENTER_X + ((RADIUS - HOUR_ARROW_LENGTH) * Math.cos(this._toRadians(angle))),
+				y = CENTER_Y + ((RADIUS - HOUR_ARROW_LENGTH) * Math.sin(this._toRadians(angle)));
 
-            ctx.beginPath();
+			ctx.beginPath();
+			ctx.lineWidth = 4;
+			ctx.moveTo(CENTER_X, CENTER_Y);
+			ctx.lineTo(x, y);
 
-            ctx.moveTo(CENTER_X, CENTER_Y);
-            ctx.lineTo(x, y);
+			ctx.stroke();
+		}
 
-            ctx.stroke();
-        },
+		_renderMinutesArrow() {
+			let ctx = this.context,
+				angle = this._getMinutesAngle(),
+				x = CENTER_X + ((RADIUS - MINUTE_ARROW_LENGTH) * Math.cos(this._toRadians(angle))),
+				y = CENTER_Y + ((RADIUS - MINUTE_ARROW_LENGTH) * Math.sin(this._toRadians(angle)));
 
-        _renderSecondsArrow: function() {
-            var ctx = this.context,
-                angle = this._getSecondsAgle(),
-                x = CENTER_X + ((RADIUS - SECONDS_ARROW_LENGTH) * Math.cos(this._toRadians(angle))),
-                y = CENTER_Y + ((RADIUS - SECONDS_ARROW_LENGTH) * Math.sin(this._toRadians(angle))),
-                tailX = CENTER_Y + ((RADIUS - SECONDS_ARROW_TAIL_LENGTH) * Math.cos(this._toRadians(angle + ANGLES_180)));
-                tailY = CENTER_Y + ((RADIUS - SECONDS_ARROW_TAIL_LENGTH) * Math.sin(this._toRadians(angle + ANGLES_180)));
+			ctx.beginPath();
 
-            ctx.beginPath();
+			ctx.moveTo(CENTER_X, CENTER_Y);
+			ctx.lineTo(x, y);
 
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = RED;
+			ctx.stroke();
+		}
 
-            ctx.moveTo(CENTER_X, CENTER_Y);
-            ctx.lineTo(x, y);
+		_renderSecondsArrow() {
+			let ctx = this.context,
+				angle = this._getSecondsAgle(),
+				x = CENTER_X + ((RADIUS - SECONDS_ARROW_LENGTH) * Math.cos(this._toRadians(angle))),
+				y = CENTER_Y + ((RADIUS - SECONDS_ARROW_LENGTH) * Math.sin(this._toRadians(angle))),
+				tailX = CENTER_Y + ((RADIUS - SECONDS_ARROW_TAIL_LENGTH) * Math.cos(this._toRadians(angle + ANGLES_180))),
+				tailY = CENTER_Y + ((RADIUS - SECONDS_ARROW_TAIL_LENGTH) * Math.sin(this._toRadians(angle + ANGLES_180)));
 
-            ctx.moveTo(CENTER_X, CENTER_Y);
-            ctx.lineTo(tailX, tailY);
+			ctx.beginPath();
 
-            ctx.stroke();
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = RED;
 
-            this._renderSecondsArrowWheel();    
-        },
+			ctx.moveTo(CENTER_X, CENTER_Y);
+			ctx.lineTo(x, y);
 
-        _renderSecondsArrowWheel: function() {
-            var ctx = this.context;
+			ctx.moveTo(CENTER_X, CENTER_Y);
+			ctx.lineTo(tailX, tailY);
 
-            ctx.beginPath();
-            ctx.arc(CENTER_X, CENTER_Y, SECONDS_ARROW_WHEEL_RADIUS, 0, 2 * Math.PI);
-            ctx.fillStyle = RED;
-            ctx.fill();
-            ctx.stroke();
-        },
+			ctx.stroke();
 
-        _renderMake: function() {
-            var ctx = this.context;
+			this._renderSecondsArrowWheel();
+		}
 
-            ctx.font = HOURS_FONT_SIZE + "px Arial";
-            
-            var textWidth = ctx.measureText(CLOCK_MAKE).width;
+		_renderSecondsArrowWheel() {
+			let ctx = this.context;
 
-            ctx.fillStyle = BLACK;
-            ctx.fillText(CLOCK_MAKE, CENTER_X - textWidth / 2, CENTER_Y - 65);
-            ctx.stroke();
-        },
+			ctx.beginPath();
+			ctx.arc(CENTER_X, CENTER_Y, SECONDS_ARROW_WHEEL_RADIUS, 0, 2 * Math.PI);
+			ctx.fillStyle = RED;
+			ctx.fill();
+			ctx.stroke();
+		}
 
-        _toRadians: function(degrees) {
-            return degrees * Math.PI / ANGLES_180;
-        },
+		_renderMake() {
+			let ctx = this.context;
 
-        _getHoursAngle: function(hours, noMinutesPrecission) {
-            var hour = hours <= 12 ? hours : hours - 12,
-                minutes = new Date().getMinutes(),
-                minutesDelta = noMinutesPrecission ? 0 : minutes / 2;
+			ctx.font = HOURS_FONT_SIZE + "px Arial";
 
-            return (hour * ANGLES_30 + minutesDelta) - ANGLES_90;
-        },
+			let textWidth = ctx.measureText(CLOCK_MAKE).width;
 
-        _getMinutesAngle: function() {
-            var minutes = new Date().getMinutes(),
-                seconds = new Date().getSeconds(),
-                secondsDelta = seconds / 10;
-            
-            return (minutes * MINUTES_STEP_ANGLE + secondsDelta) - ANGLES_90;
-        },
+			ctx.fillStyle = BLACK;
+			ctx.fillText(CLOCK_MAKE, CENTER_X - textWidth / 2, CENTER_Y - 65);
+			ctx.stroke();
+		}
 
-        _getSecondsAgle: function() {
-            var seconds = new Date().getSeconds();
-            
-            return (seconds * MINUTES_STEP_ANGLE) - ANGLES_90;
-        }
-    };
+		_toRadians(degrees) {
+			return degrees * Math.PI / ANGLES_180;
+		}
+
+		_getHoursAngle(hours, noMinutesPrecission) {
+			let hour = hours <= 12 ? hours : hours - 12,
+				minutes = new Date().getMinutes(),
+				minutesDelta = noMinutesPrecission ? 0 : minutes / 2;
+
+			return (hour * ANGLES_30 + minutesDelta) - ANGLES_90;
+		}
+
+		_getMinutesAngle() {
+			let minutes = new Date().getMinutes(),
+				seconds = new Date().getSeconds(),
+				secondsDelta = seconds / 10;
+
+			return (minutes * MINUTES_STEP_ANGLE + secondsDelta) - ANGLES_90;
+		}
+
+		_getSecondsAgle() {
+			let seconds = new Date().getSeconds();
+
+			return (seconds * MINUTES_STEP_ANGLE) - ANGLES_90;
+		}
+	}
 
     window.ClockNamespace = window.ClockNamespace || {};
     window.ClockNamespace.Clock = Clock;
@@ -246,6 +242,6 @@
         PENDULUM_CENTER_Y = HEIGHT - 100,
         PENDULUM_LENGTH = 75,
         PENDULUM_RADIUS = 25,
-        PENDULUM_MIN_ANGLE = 120, 
+        PENDULUM_MIN_ANGLE = 120,
         PENDULUM_MAX_ANGLE = 60;
 })();
